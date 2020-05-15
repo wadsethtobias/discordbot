@@ -2,10 +2,12 @@ const Discord = require("discord.js")
 const config = require("./config.json")
 const fs = require("fs")
 const nanoid = require("nanoid")
+const moment = require("moment")
 
 let permissions = require("./permissions.json")
 let tempbans = require("./tempbans.json")
 let warnings = require("./warnings.json")
+let suggestions = require("./suggestions.json")
 
 module.exports.log = (message, messageToSend) => {
     let logchannel = message.guild.channels.cache.find(channel => channel.id === config.logchannel)
@@ -26,8 +28,9 @@ module.exports.getLogID = () => {
     return config.logchannel
 }
 
-module.exports.hasPermission = (sender, command) => {
-    if (sender.roles.cache.hasPermission("ADMINISTRATOR")) return true
+module.exports.hasPermission = async (sender, command) => {
+    let user = await sender.client.users.fetch(sender.id)
+    if (user.hasPermission("ADMINISTRATOR")) return true
     let permArr = permissions[command]
     if (permArr === undefined) {
         return false
@@ -37,7 +40,7 @@ module.exports.hasPermission = (sender, command) => {
         if (statement) {
             return statement
         }
-        statement = sender.roles.cache.includes(perm)
+        statement = user.roles.cache.includes(perm)
     })
     return false
 }
@@ -177,6 +180,137 @@ module.exports.removeWarning = (user, uid) => {
 
 module.exports.setPrefix = prefix => {
     config.prefix = prefix
+    fs.writeFileSync("./config.json", JSON.stringify(config), (err) => {
+        if (err) console.error(err)
+    })
+}
+
+module.exports.addSuggestion = async (message, user, suggestion) => {
+    let uid = nanoid.nanoid()
+
+    let time = new Date()
+
+    let logchannel = message.guild.channels.cache.find(channel => channel.id === config.suggestionschannel)
+    if (logchannel) {
+        let embed = new Discord.MessageEmbed()
+        .setDescription(suggestion.join(" "))
+        .setFooter(`Suggestion ID: ${uid} | Suggested at ${moment(time).format("MMMM Do YYYY, h:mm:ss a")}`)
+        .setColor(config.color)
+        .setThumbnail(user.avatarURL())
+        .setAuthor(`Suggestion from ${user.tag}`, user.avatarURL())
+
+        const filter = m => m
+        logchannel.awaitMessages(filter, { max: 1, time: 3000, errors: ['time'] })
+        .then(collected => {
+
+            collected.first().react("👍")
+            collected.first().react("👎")
+            suggestions[uid] = {
+                user: user.id,
+                suggestion: suggestion.join(" "),
+                suggestionEmbed: collected.first().id
+            }
+    
+            fs.writeFileSync("./suggestions.json", JSON.stringify(suggestions), (err) => {
+                if (err) console.error(err)
+            })
+        })
+        .catch(console.error)
+
+        logchannel.send(embed)
+
+    } else {
+        message.channel.send("No suggestions log channel found\nLink a channel with " + config.prefix + "config setsuggestionchannel <#channel>")
+    }
+}
+
+module.exports.modSuggestion = (message, sender, action, uid) => {
+    if (action.toLowerCase() === "approve") {
+        if (suggestions[uid] === undefined) {
+            message.channel.send("No suggestion with that uid could be found")
+            return
+        }
+    
+        let logchannel = message.guild.channels.cache.find(channel => channel.id === config.suggestionslogchannel)
+        let channel = message.guild.channels.cache.find(channel => channel.id === config.suggestionschannel)
+        channel.messages.fetch(suggestions[uid].suggestionEmbed)
+        .then(s => {
+            let up = -1
+            let down = -1
+            let reactions = s.reactions
+            reactions.cache.forEach(reaction => {
+                if (reaction.emoji.name === "👍") {
+                    up++
+                } else if (reaction.emoji.name === "👎") {
+                    down++
+                }
+            })
+            if (channel && logchannel) {
+                s.delete()
+                let embed = new Discord.MessageEmbed()
+                .setTitle(`Approved Suggestion`)
+                .addField("Suggestion", suggestions[uid].suggestion)
+                .addField("Accepted By", sender)
+                .addField("Votes", `👍 ${up} | ${down} 👎`)
+                .setColor(config.color)
+                logchannel.send(embed)
+        
+                delete suggestions[uid]
+                fs.writeFileSync("./suggestions.json", JSON.stringify(suggestions), (err) => {
+                    if (err) console.error(err)
+                })
+            }
+        })
+        .catch(console.error)
+    } else if (action.toLowerCase() === "reject") {
+        if (suggestions[uid] === undefined) {
+            message.channel.send("No suggestion with that uid could be found")
+            return
+        }
+    
+        let logchannel = message.guild.channels.cache.find(channel => channel.id === config.suggestionslogchannel)
+        let channel = message.guild.channels.cache.find(channel => channel.id === config.suggestionschannel)
+        channel.messages.fetch(suggestions[uid].suggestionEmbed)
+        .then(s => {
+            let up = -1
+            let down = -1
+            let reactions = s.reactions
+            reactions.cache.forEach(reaction => {
+                if (reaction.emoji.name === "👍") {
+                    up++
+                } else if (reaction.emoji.name === "👎") {
+                    down++
+                }
+            })
+            if (channel && logchannel) {
+                s.delete()
+                let embed = new Discord.MessageEmbed()
+                .setTitle(`Rejected Suggestion`)
+                .addField("Suggestion", suggestions[uid].suggestion)
+                .addField("Rejected By", sender)
+                .addField("Votes", `👍 ${up} | ${down} 👎`)
+                .setColor(config.color)
+                logchannel.send(embed)
+        
+                delete suggestions[uid]
+                fs.writeFileSync("./suggestions.json", JSON.stringify(suggestions), (err) => {
+                    if (err) console.error(err)
+                })
+            }
+        })
+        .catch(console.error)
+    }
+}
+
+module.exports.updateSuggestionsChannel = channel => {
+    config.suggestionschannel = channel
+    fs.writeFileSync("./config.json", JSON.stringify(config), (err) => {
+        if (err) console.error(err)
+    })
+}
+
+module.exports.updateSuggestionsLogChannel = channel => {
+    config.suggestionslogchannel = channel
     fs.writeFileSync("./config.json", JSON.stringify(config), (err) => {
         if (err) console.error(err)
     })

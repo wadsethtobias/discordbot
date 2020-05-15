@@ -14,6 +14,14 @@ module.exports.run = async (bot, message, args) => {
     if (!user) return message.channel.send("That user cannot be found")
     args.shift()
     let time = ms(args[0])
+    if (time === undefined) {
+        let embed = new Discord.MessageEmbed()
+        .setDescription("Please enter a valid time e.g. 1w")
+        .setColor(config.color)
+    
+        message.channel.send(embed)
+        return
+    }
     let endTime = new Date().getTime() + time
     let endDate = moment(new Date(endTime)).format('MMMM Do YYYY, h:mm:ss a')
     args.shift()

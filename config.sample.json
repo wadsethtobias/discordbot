@@ -3,5 +3,7 @@
     "prefix":"%",
     "ip":"mc.example.com",
     "color":"#ff0000",
-    "logchannel":""
+    "logchannel":"",
+    "suggestionschannel":"",
+    "suggestionslogchannel":""
 }
