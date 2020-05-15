@@ -9,6 +9,8 @@ module.exports.run = async (bot, message, args) => {
         return
     }
     // config setlogchannel <#channel>
+    // config setsuggestionschannel <#channel>
+    // config setsuggestionslogchannel <#channel>
     // config permission [add|remove|list] command <@role>
     // config commands
 
@@ -16,6 +18,14 @@ module.exports.run = async (bot, message, args) => {
         let channel = message.mentions.channels.first()
         utils.updateLog(channel.id)
         message.channel.send(`Successfully updated the log channel to ${channel}`)
+    } else if (args[0].toLowerCase() === "setsuggestionschannel") {
+        let channel = message.mentions.channels.first()
+        utils.updateSuggestionsChannel(channel.id)
+        message.channel.send(`Successfully updated the suggestions channel to ${channel}`)
+    } else if (args[0].toLowerCase() === "setsuggestionslogchannel") {
+        let channel = message.mentions.channels.first()
+        utils.updateSuggestionsLogChannel(channel.id)
+        message.channel.send(`Successfully updated the suggestions channel to ${channel}`)
     } else if (args[0].toLowerCase() === "commands") {
 
         fs.readdir("./commands/", (err, file) => {
