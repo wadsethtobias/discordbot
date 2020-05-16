@@ -4,7 +4,7 @@ const config = require("../config.json")
 
 module.exports.run = async (bot, message, args) => {
 
-    if (!utils.hasPermission(message.author, __filename.slice(__dirname.length + 1, -3))) {
+    if (!utils.hasPermission(message, message.author, __filename.slice(__dirname.length + 1, -3))) {
         return
     }
     // kick @user the rest is the reason

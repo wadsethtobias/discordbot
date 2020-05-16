@@ -28,8 +28,8 @@ module.exports.getLogID = () => {
     return config.logchannel
 }
 
-module.exports.hasPermission = async (sender, command) => {
-    let user = await sender.client.users.fetch(sender.id)
+module.exports.hasPermission = async (message, sender, command) => {
+    let user = await message.guild.members.fetch(sender.id)
     if (user.hasPermission("ADMINISTRATOR")) return true
     let permArr = permissions[command]
     if (permArr === undefined) {
@@ -203,8 +203,10 @@ module.exports.addSuggestion = async (message, user, suggestion) => {
         logchannel.awaitMessages(filter, { max: 1, time: 3000, errors: ['time'] })
         .then(collected => {
 
-            collected.first().react("👍")
-            collected.first().react("👎")
+            // collected.first().react("👍").then(test => {
+            //     test.message.react("👎")
+            // })
+            // collected.first().react("👎")
             suggestions[uid] = {
                 user: user.id,
                 suggestion: suggestion.join(" "),
@@ -217,7 +219,10 @@ module.exports.addSuggestion = async (message, user, suggestion) => {
         })
         .catch(console.error)
 
-        logchannel.send(embed)
+        const msg = await logchannel.send(embed)
+        await msg.react("👍")
+        await msg.react("👎")
+        await msg.react("📩")
 
     } else {
         message.channel.send("No suggestions log channel found\nLink a channel with " + config.prefix + "config setsuggestionchannel <#channel>")
