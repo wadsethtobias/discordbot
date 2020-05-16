@@ -28,6 +28,8 @@ bot.on("ready", async () => {
     utils.loadTempBan(bot)
 
     console.log(`${bot.user.username} is online`)
+    
+    console.log('Ready!')
 })
 
 bot.on("message", async message => {
