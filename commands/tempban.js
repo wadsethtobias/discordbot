@@ -4,7 +4,7 @@ const ms = require("ms")
 const utils = require("../utils.js")
 const moment = require("moment")
 
-exports.run = async (config, bot, message, args) => {
+module.exports.run = async (bot, message, args) => {
 
     if (!utils.hasPermission(message, message.author, __filename.slice(__dirname.length + 1, -3))) {
         return

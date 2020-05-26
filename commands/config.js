@@ -3,7 +3,7 @@ const utils = require("../utils")
 const config = require("../config.json")
 const fs = require("fs")
 
-exports.run = async (config, bot, message, args) => {
+module.exports.run = async (bot, message, args) => {
 
     if (!utils.hasPermission(message, message.author, __filename.slice(__dirname.length + 1, -3))) {
         return
